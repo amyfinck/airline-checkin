@@ -14,6 +14,9 @@ struct customer_info{ /// use this struct to record the customer information rea
 void add_newCust(int user_id, int class_type, int service_time, int arrival_time);
 void deleteCust(int user_id);
 void printList();
-int LookupCustomer(int user_id);
+int customerExists(int user_id);
+int getClassType(int user_id);
+int getServiceTime(int user_id);
+int getArrivalTime(int user_id);
 
 #endif

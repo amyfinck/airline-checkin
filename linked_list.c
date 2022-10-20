@@ -68,8 +68,7 @@ void printList()
     printf("Total customers: %d\n", count);
 }
 
-
-int LookupCustomer(int user_id)
+int customerExists(int user_id)
 {
     CustomerInfo* temp = head;
 
@@ -84,3 +83,47 @@ int LookupCustomer(int user_id)
     return false;
 }
 
+int getClassType(int user_id)
+{
+    CustomerInfo* temp = head;
+
+    while(temp != NULL)
+    {
+        if(temp->user_id == user_id)
+        {
+            return temp->class_type;
+        }
+        temp = temp->next;
+    }
+    return -1;
+}
+
+int getServiceTime(int user_id)
+{
+    CustomerInfo* temp = head;
+
+    while(temp != NULL)
+    {
+        if(temp->user_id == user_id)
+        {
+            return temp->service_time;
+        }
+        temp = temp->next;
+    }
+    return -1;
+}
+
+int getArrivalTime(int user_id)
+{
+    CustomerInfo* temp = head;
+
+    while(temp != NULL)
+    {
+        if(temp->user_id == user_id)
+        {
+            return temp->arrival_time;
+        }
+        temp = temp->next;
+    }
+    return -1;
+}

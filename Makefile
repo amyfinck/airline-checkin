@@ -1,16 +1,17 @@
 CC      = gcc
 RM      = rm -f
 RMD     = rm -f -r
+PT      = -pthread
 
 default: all
 
 all: main
 
 main: main.c
-	$(CC) -o ACS main.c
+	$(CC) $(PT) -o ACS main.c linked_list.c
 
 debug:
-	$(CC) -g -o ACS PMan main.c
+	$(CC) -g -o ACS ACS main.c linked_list.c
 
 clean:
 	$(RM) ACS

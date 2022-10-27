@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #include "main.h"
 #include "linked_list.h"
@@ -17,6 +18,8 @@
 /* global variables */
 
 int customersLeft = 0;
+
+sem_t clerkSem;
 
 Queue *econ_head = NULL;
 Queue *buis_head = NULL;
@@ -56,6 +59,9 @@ int main(int argc, char **argv)
     int NCustomers;
     int NClerks = 5;
 
+    sem_init(&clerkSem, 0, NClerks);
+
+
     if(argc == 1)
     {
         printf("Input file required\n");
@@ -82,7 +88,7 @@ int main(int argc, char **argv)
 
     customersLeft = NCustomers;
 
-    printf("number of customers is %d\n", NCustomers);
+    printf("number of customers is %d\n\n", NCustomers);
 
     for(int i = 0; i < NCustomers; i++)
     {
@@ -99,29 +105,11 @@ int main(int argc, char **argv)
         }
     }
 
-    for(int i = 0; i < NClerks; i++)
-    {
-        int* clerk_id_ptr = malloc(sizeof(int));
-        *clerk_id_ptr = i + 1;
-        if(pthread_create(&clerkThread[i], NULL, &clerk_entry, clerk_id_ptr) != 0)
-        {
-            printf("Error creating clerk thread %d\n", i);
-        }
-    }
-
     for(int i = 0; i < NCustomers; i++)
     {
         if(pthread_join(custThread[i], NULL) != 0)
         {
             printf("Error joining customer thread %d\n", i);
-        }
-    }
-
-    for(int i = 0; i < NClerks; i++)
-    {
-        if(pthread_join(clerkThread[i], NULL) != 0)
-        {
-            printf("Error joining clerk thread %d\n", i);
         }
     }
 
@@ -133,12 +121,13 @@ int main(int argc, char **argv)
     pthread_cond_destroy(&econCond);
     pthread_cond_destroy(&buisCond);
 
+    sem_close(&clerkSem);
+
     // calculate the average waiting time of all customers
     return 0;
 }
 
 // function entry for customer threads
-
 void * customer_entry(void* cust_id_ptr)
 {
     int cust_id = *(int*)cust_id_ptr;
@@ -151,76 +140,84 @@ void * customer_entry(void* cust_id_ptr)
 
     printf("A customer arrives: customer ID %2d. \n", cust_id);
 
-    if(class == 0)
+    if(class == 1)
     {
-        pthread_mutex_lock(&econMutex);
-        econQueueLength++;
-        econ_head = addToQueue(econ_head, cust_id);
-        printf("Customer %d enters a queue: the queue ID %1d, and length of the queue %2d. \n", cust_id, class, econQueueLength);
+        /******* Add to Buisness Queue ******/
 
-        while(1)
-        {
-            pthread_cond_wait(&econCond, &econMutex);
-            // pthread_mutex_unlock(&econMutex);
-            // wait for signal on econCond
-            // pthread_mutex_lock(&econMutex);
-            printf("%d received\n", cust_id);
-
-            if(econ_head != NULL && econ_head->user_id == cust_id)
-            {
-                /* Try to figure out which clerk awoken me, because you need to print the clerk Id information */
-                /* get the current machine time; updates the overall_waiting_time*/
-
-
-                printf("A clerk is seeing me! I am user %d and I will now sleep for %d\n", cust_id, service_time);
-                usleep(service_time * 100000);
-                econ_head = exitQueue(econ_head, cust_id);
-                econQueueLength--;
-
-                pthread_mutex_unlock(&customerCountMutex);
-                customersLeft--;
-                pthread_mutex_lock(&customerCountMutex);
-
-                break;
-            }
-        }
-        pthread_mutex_unlock(&econMutex);
-    }
-    else if(class == 1)
-    {
         pthread_mutex_lock(&buisMutex);
-        buisQueueLength++;
         buis_head = addToQueue(buis_head, cust_id);
-        printf("A customer enters a queue: the queue ID %1d, and length of the queue %2d. \n", class, buisQueueLength);
-
-        while(1)
-        {
-            pthread_cond_wait(&buisCond, &buisMutex);
-            // pthread_mutex_unlock(&buisMutex);
-            // wait for signal on buisCond
-            // pthread_mutex_lock(&buisMutex);
-
-            if(buis_head != NULL && buis_head->user_id == cust_id)
-            {
-                /* Try to figure out which clerk awoken me, because you need to print the clerk Id information */
-                /* get the current machine time; updates the overall_waiting_time*/
-
-                printf("A clerk has awoken me! I am user %d and I will now sleep for %d\n", cust_id, service_time);
-                //fprintf(stdout, "A clerk starts serving a customer: start time %.2f, the customer ID %2d, the clerk ID %1d. \n", /*...*/);
-                usleep(service_time * 100000);
-                //fprintf(stdout, "A clerk finishes serving a customer: end time %.2f, the customer ID %2d, the clerk ID %1d. \n", /* ... */);\
-                buis_head = exitQueue(buis_head, cust_id);
-                buisQueueLength--;
-
-                pthread_mutex_unlock(&customerCountMutex);
-                customersLeft--;
-                printf("After customer %d leaves, there are %d customers left.\n", cust_id, customersLeft);
-                pthread_mutex_lock(&customerCountMutex);
-
-                break;
-            }
-        }
+        buisQueueLength++;
+        printf("A customer %d enters the Business queue with length of the queue %2d. \n Business ", cust_id, buisQueueLength);
+        printQueue(buis_head);
+        printf("\n");
         pthread_mutex_unlock(&buisMutex);
+
+        /******* Get seen by clerk ******/
+
+        // wait for a clerk
+        sem_wait(&clerkSem);
+
+        printf("A clerk has awoken me! I am user %d from business and I will now sleep for %d\n\n", cust_id, service_time);
+        usleep(service_time * 100000);
+
+        /******* Leave the airport ******/
+
+
+        pthread_mutex_lock(&buisMutex);
+        printf("Customer %d leaves.", cust_id);
+        buisQueueLength--;
+        buis_head = exitQueue(buis_head, cust_id);
+        printf("The Business Queue is now: ");
+        printQueue(buis_head);
+        printf("\n");
+        pthread_mutex_unlock(&buisMutex);
+
+        pthread_mutex_lock(&customerCountMutex);
+        customersLeft--;
+        //printf("There are %d customers left to serve.\n", customersLeft);
+        pthread_mutex_unlock(&customerCountMutex);
+
+        // done with clerk
+        sem_post(&clerkSem);
+    }
+    else if(class == 0)
+    {
+        /******* Add to Economy Queue ******/
+
+        pthread_mutex_lock(&econMutex);
+        econ_head = addToQueue(econ_head, cust_id);
+        econQueueLength++;
+        printf("A customer %d enters the Economy queue with length of the queue %2d. \n Economy ", cust_id, econQueueLength);
+        printQueue(econ_head);
+        printf("\n");
+        pthread_mutex_unlock(&econMutex);
+
+        /******* Get seen by clerk ******/
+
+        while(buisQueueLength > 0) {} // do nothing
+
+        sem_wait(&clerkSem);
+
+        printf("A clerk is seeing me! I am user %d from econ and I will now sleep for %d\n\n", cust_id, service_time);
+        usleep(service_time * 100000);
+
+        /******* Leave the airport ******/
+
+
+        pthread_mutex_lock(&econMutex);
+        printf("Customer %d leaves.", cust_id);
+        econQueueLength--;
+        econ_head = exitQueue(econ_head, cust_id);
+        printf("The Economy Queue is now: ");
+        printQueue(econ_head);
+        printf("\n");
+        pthread_mutex_unlock(&econMutex);
+
+        pthread_mutex_lock(&customerCountMutex);
+        customersLeft--;
+        //printf("There are %d customers left to serve.\n\n", customersLeft);
+        pthread_mutex_unlock(&customerCountMutex);
+
     }
 
     //pthread_cond_signal(/* The clerk awoken me */); // Notify the clerk that service is finished, it can serve another customer
@@ -228,45 +225,6 @@ void * customer_entry(void* cust_id_ptr)
     //pthread_exit(NULL);
 
     free(cust_id_ptr);
-
-    printf("\ncustomer %d returning\n\n", cust_id);
-
-    return NULL;
-}
-
-// function entry for clerk threads
-void *clerk_entry(void * clerk_id_ptr)
-{
-    int clerk_id = *(int*)clerk_id_ptr;
-    printf("Clerk %d checking into desk\n", clerk_id);
-    while(1)
-    {
-        if(buisQueueLength != 0)
-        {
-            pthread_mutex_lock(&buisMutex);
-            pthread_mutex_unlock(&buisMutex);
-
-            // TODO - the clerk needs to wait
-
-            pthread_mutex_unlock(&customerCountMutex);
-            if(customersLeft == 0) break;
-            pthread_mutex_lock(&customerCountMutex);
-        }
-        else
-        {
-            pthread_mutex_lock(&econMutex);
-            pthread_cond_broadcast(&econCond);
-            pthread_mutex_unlock(&econMutex);
-
-            pthread_mutex_unlock(&customerCountMutex);
-            if(customersLeft == 0) break;
-            pthread_mutex_lock(&customerCountMutex);
-        }
-    }
-
-    printf("Clerk %d clocking out\n", clerk_id);
-
-    free(clerk_id_ptr);
 
     return NULL;
 }

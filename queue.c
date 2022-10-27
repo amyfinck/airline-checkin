@@ -58,13 +58,16 @@ void printQueue(Queue* head)
     int count = 0;
     Queue* temp = head;
 
+    printf("Queue: ");
+
     while(temp != NULL)
     {
-        printf("customer %d\n", temp->user_id);
+        printf("%d ", temp->user_id);
         count++;
         temp = temp->next;
     }
-    printf("Total customers: %d\n", count);
+    printf("\n");
+    //printf("Total customers: %d\n", count);
 }
 
 void setServed(Queue* head, int user_id)

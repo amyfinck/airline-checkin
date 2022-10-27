@@ -55,7 +55,6 @@ int main(int argc, char **argv)
 
     int NCustomers;
     int NClerks = 5;
-    customersLeft = NCustomers;
 
     if(argc == 1)
     {
@@ -80,6 +79,8 @@ int main(int argc, char **argv)
     }
 
     fscanf(custFile, "%d\n", &NCustomers);
+
+    customersLeft = NCustomers;
 
     printf("number of customers is %d\n", NCustomers);
 
@@ -159,7 +160,6 @@ void * customer_entry(void* cust_id_ptr)
 
         while(1)
         {
-            printf("%d in queue\n", cust_id);
             pthread_cond_wait(&econCond, &econMutex);
             // pthread_mutex_unlock(&econMutex);
             // wait for signal on econCond
@@ -168,6 +168,10 @@ void * customer_entry(void* cust_id_ptr)
 
             if(econ_head != NULL && econ_head->user_id == cust_id)
             {
+                /* Try to figure out which clerk awoken me, because you need to print the clerk Id information */
+                /* get the current machine time; updates the overall_waiting_time*/
+
+
                 printf("A clerk is seeing me! I am user %d and I will now sleep for %d\n", cust_id, service_time);
                 usleep(service_time * 100000);
                 econ_head = exitQueue(econ_head, cust_id);
@@ -198,13 +202,19 @@ void * customer_entry(void* cust_id_ptr)
 
             if(buis_head != NULL && buis_head->user_id == cust_id)
             {
+                /* Try to figure out which clerk awoken me, because you need to print the clerk Id information */
+                /* get the current machine time; updates the overall_waiting_time*/
+
                 printf("A clerk has awoken me! I am user %d and I will now sleep for %d\n", cust_id, service_time);
+                //fprintf(stdout, "A clerk starts serving a customer: start time %.2f, the customer ID %2d, the clerk ID %1d. \n", /*...*/);
                 usleep(service_time * 100000);
+                //fprintf(stdout, "A clerk finishes serving a customer: end time %.2f, the customer ID %2d, the clerk ID %1d. \n", /* ... */);\
                 buis_head = exitQueue(buis_head, cust_id);
                 buisQueueLength--;
 
                 pthread_mutex_unlock(&customerCountMutex);
                 customersLeft--;
+                printf("After customer %d leaves, there are %d customers left.\n", cust_id, customersLeft);
                 pthread_mutex_lock(&customerCountMutex);
 
                 break;
@@ -212,23 +222,6 @@ void * customer_entry(void* cust_id_ptr)
         }
         pthread_mutex_unlock(&buisMutex);
     }
-
-    //pthread_cond_wait(/* cond_var of selected queue */, /* mutexLock of selected queue */);
-    //Now pthread_cond_wait returned, customer was awoken by one of the clerks
-
-
-    //pthread_mutex_unlock(/*mutexLock of selected queue*/); //unlock mutex_lock such that other customers can enter into the queue
-
-    /* Try to figure out which clerk awoken me, because you need to print the clerk Id information */
-
-    /* get the current machine time; updates the overall_waiting_time*/
-
-    //fprintf(stdout, "A clerk starts serving a customer: start time %.2f, the customer ID %2d, the clerk ID %1d. \n", /*...*/);
-
-    //usleep(/* as long as the service time of this customer */);
-
-    /* get the current machine time; */
-    //fprintf(stdout, "A clerk finishes serving a customer: end time %.2f, the customer ID %2d, the clerk ID %1d. \n", /* ... */);\
 
     //pthread_cond_signal(/* The clerk awoken me */); // Notify the clerk that service is finished, it can serve another customer
 
@@ -244,7 +237,6 @@ void * customer_entry(void* cust_id_ptr)
 // function entry for clerk threads
 void *clerk_entry(void * clerk_id_ptr)
 {
-    int exit = 0;
     int clerk_id = *(int*)clerk_id_ptr;
     printf("Clerk %d checking into desk\n", clerk_id);
     while(1)
@@ -252,23 +244,27 @@ void *clerk_entry(void * clerk_id_ptr)
         if(buisQueueLength != 0)
         {
             pthread_mutex_lock(&buisMutex);
-            pthread_cond_broadcast(&buisCond);
             pthread_mutex_unlock(&buisMutex);
+
+            // TODO - the clerk needs to wait
+
+            pthread_mutex_unlock(&customerCountMutex);
+            if(customersLeft == 0) break;
+            pthread_mutex_lock(&customerCountMutex);
         }
         else
         {
             pthread_mutex_lock(&econMutex);
             pthread_cond_broadcast(&econCond);
             pthread_mutex_unlock(&econMutex);
-        }
-//        pthread_mutex_unlock(&customerCountMutex);
-//        if(customersLeft == 0) exit = 1;
-//        pthread_mutex_lock(&customerCountMutex);
-    }
-        //pthread_cond_wait(); // wait the customer to finish its service, clerk busy
-    //}
 
-    //pthread_exit(NULL);
+            pthread_mutex_unlock(&customerCountMutex);
+            if(customersLeft == 0) break;
+            pthread_mutex_lock(&customerCountMutex);
+        }
+    }
+
+    printf("Clerk %d clocking out\n", clerk_id);
 
     free(clerk_id_ptr);
 

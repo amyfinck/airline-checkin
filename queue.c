@@ -9,6 +9,7 @@ Queue* addToQueue(Queue* head, int user_id)
     Queue* new_cust = (Queue*) malloc(sizeof(Queue));
 
     new_cust->user_id = user_id;
+    new_cust->served = 0;
     new_cust->next = NULL;
 
     if(head == NULL)
@@ -66,6 +67,20 @@ void printQueue(Queue* head)
     printf("Total customers: %d\n", count);
 }
 
+void setServed(Queue* head, int user_id)
+{
+    Queue* temp = head;
+
+    while(temp != NULL)
+    {
+        if(temp->user_id == user_id)
+        {
+            temp->served = 1;
+        }
+        temp = temp->next;
+    }
+}
+
 int customerInQueue(Queue* head, int user_id)
 {
     Queue* temp = head;
@@ -73,6 +88,21 @@ int customerInQueue(Queue* head, int user_id)
     while(temp != NULL)
     {
         if(temp->user_id == user_id)
+        {
+            return true;
+        }
+        temp = temp->next;
+    }
+    return false;
+}
+
+int allServed(Queue* head)
+{
+    Queue* temp = head;
+
+    while(temp != NULL)
+    {
+        if(temp->served == 1)
         {
             return true;
         }

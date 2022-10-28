@@ -6,8 +6,8 @@ typedef struct customer_info CustomerInfo;
 struct customer_info{ /// use this struct to record the customer information read from customers.txt
     int user_id;
     int class_type;
-    int arrival_time;
     int service_time;
+    int arrival_time;
     CustomerInfo* next;
 };
 

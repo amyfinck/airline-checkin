@@ -18,3 +18,4 @@ int customerInQueue(Queue* head, int user_id);
 int allServed(Queue* head);
 
 #endif //ASSIGNMENT2_QUEUE_H
+

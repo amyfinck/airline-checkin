@@ -53,7 +53,6 @@ void deleteCust(int user_id)
         while (temp != NULL);
     }
 }
-
 void printList()
 {
     int count = 0;
@@ -97,7 +96,6 @@ int getClassType(int user_id)
     }
     return -1;
 }
-
 int getServiceTime(int user_id)
 {
     CustomerInfo* temp = head;

@@ -92,9 +92,9 @@ int main(int argc, char **argv)
 
     for(int i = 0; i < NCustomers; i++)
     {
-        int user_id, class_type, service_time, arrival_time;
-        fscanf(custFile, "%d:%d,%d,%d\n", &user_id, &class_type, &service_time, &arrival_time);
-        add_newCust(user_id, class_type, service_time, arrival_time);
+        int user_id, class_type,  arrival_time, service_time;
+        fscanf(custFile, "%d:%d,%d,%d\n", &user_id, &class_type, &arrival_time, &service_time);
+        add_newCust(user_id, class_type, arrival_time, service_time);
 
         int* user_id_ptr = malloc(sizeof(int));
         *user_id_ptr = user_id;
@@ -104,6 +104,8 @@ int main(int argc, char **argv)
             printf("Error creating customer thread %d\n", i);
         }
     }
+
+    printList();
 
     for(int i = 0; i < NCustomers; i++)
     {
@@ -157,16 +159,22 @@ void * customer_entry(void* cust_id_ptr)
         // wait for a clerk
         sem_wait(&clerkSem);
 
-        printf("A clerk has awoken me! I am user %d from business and I will now sleep for %d\n\n", cust_id, service_time);
+        int* semVal = malloc(sizeof(int));
+        if(sem_getvalue(&clerkSem, semVal) != 0)
+        {
+            printf("getvalue failed\n");
+        }
+        printf("Clerk %d awoke me! I am user %d from business and I will now sleep for %d\n\n", *semVal, cust_id, service_time);
+        free(semVal);
+
         usleep(service_time * 100000);
 
         /******* Leave the airport ******/
 
-
         pthread_mutex_lock(&buisMutex);
-        printf("Customer %d leaves.", cust_id);
+        printf("****Customer %d leaves.****", cust_id);
         buisQueueLength--;
-        buis_head = exitQueue(buis_head, cust_id);
+        buis_head = exitQueue2(buis_head, cust_id);
         printf("The Business Queue is now: ");
         printQueue(buis_head);
         printf("\n");
@@ -194,20 +202,31 @@ void * customer_entry(void* cust_id_ptr)
 
         /******* Get seen by clerk ******/
 
+        //pthread_mutex_lock(&buisMutex);
+        printf("buisQueueLength - %d\n", buisQueueLength);
         while(buisQueueLength > 0) {} // do nothing
+        //pthread_mutex_unlock(&buisMutex);
 
         sem_wait(&clerkSem);
 
-        printf("A clerk is seeing me! I am user %d from econ and I will now sleep for %d\n\n", cust_id, service_time);
+        int* semVal = malloc(sizeof(int));
+        if(sem_getvalue(&clerkSem, semVal) != 0)
+        {
+            //printf("getvalue failed\n");
+        }
+        printf("Clerk %d awoke me! I am user %d from economy and I will now sleep for %d\n\n", *semVal, cust_id, service_time);
         usleep(service_time * 100000);
+        free(semVal);
 
         /******* Leave the airport ******/
 
-
         pthread_mutex_lock(&econMutex);
-        printf("Customer %d leaves.", cust_id);
+        printf("****Customer %d leaves.****", cust_id);
+        printf("The Economy Queue is now: ");
+        printQueue(econ_head);
+        printf("\n");
         econQueueLength--;
-        econ_head = exitQueue(econ_head, cust_id);
+        econ_head = exitQueue2(econ_head, cust_id);
         printf("The Economy Queue is now: ");
         printQueue(econ_head);
         printf("\n");
@@ -217,7 +236,6 @@ void * customer_entry(void* cust_id_ptr)
         customersLeft--;
         //printf("There are %d customers left to serve.\n\n", customersLeft);
         pthread_mutex_unlock(&customerCountMutex);
-
     }
 
     //pthread_cond_signal(/* The clerk awoken me */); // Notify the clerk that service is finished, it can serve another customer

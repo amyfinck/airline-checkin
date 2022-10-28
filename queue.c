@@ -31,25 +31,58 @@ Queue* addToQueue(Queue* head, int user_id)
 
 Queue* exitQueue(Queue* head, int user_id)
 {
+    printf("in exitqueue\n");
+    Queue* temp;
+    temp = head;
+
+    printQueue(head);
+    printf("done\n");
+
+    if(head->user_id == user_id)
+    {
+        printf("head\n");
+        head = head->next;
+    }
+    else
+    {
+        printf("in else\n");
+        do
+        {
+            printf("chec\n");
+            if (temp->next->user_id == user_id)
+            {
+                printf("if \n");
+                temp->next = temp->next->next;
+                printf("here\n");
+            }
+            printf("seg\n");
+            temp = temp->next;
+            printf("fault\n");
+        }
+        while (temp != NULL);
+    }
+    printf("returning from queue\n");
+    return head;
+}
+
+Queue* exitQueue2(Queue* head, int user_id)
+{
     Queue* temp;
     temp = head;
 
     if(head->user_id == user_id)
     {
-        head = head->next;
+        return head->next;
+
     }
-    else
+    while(temp != NULL && temp->next != NULL)
     {
-        do
+        if(temp->next->user_id == user_id)
         {
-            if (temp->next->user_id == user_id)
-            {
-                temp->next = temp->next->next;
-            }
-            temp = temp->next;
+            temp->next = temp->next->next;
         }
-        while (temp != NULL);
     }
+    printf("returning from queue\n");
     return head;
 }
 

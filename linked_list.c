@@ -6,14 +6,14 @@
 
 CustomerInfo *head = NULL;
 
-void add_newCust(int user_id, int class_type, int service_time, int arrival_time)
+void add_newCust(int user_id, int class_type, int arrival_time, int service_time)
 {
     CustomerInfo* new_cust = (CustomerInfo*) malloc(sizeof(CustomerInfo));
 
     new_cust->user_id = user_id;
     new_cust->class_type = class_type;
-    new_cust->service_time = service_time;
     new_cust->arrival_time = arrival_time;
+    new_cust->service_time = service_time;
     new_cust->next = NULL;
 
     if(head == NULL)
@@ -61,7 +61,7 @@ void printList()
 
     while(temp != NULL)
     {
-        printf("customer %d - Class:%d, service time: %d, arrival time: %d\n", temp->user_id, temp->class_type, temp->service_time, temp->arrival_time);
+        printf("customer %d - Class:%d, arrival time: %d, service time: %d, \n", temp->user_id, temp->class_type, temp->arrival_time, temp->service_time);
         count++;
         temp = temp->next;
     }

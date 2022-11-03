@@ -256,9 +256,11 @@ void * customer_entry(void* cust_id_ptr)
         pthread_mutex_lock(&econMutex);
         while(econ_head != NULL && econ_head->user_id != cust_id)
         {
+            pthread_mutex_unlock(&econMutex);
             // give up semaphore if not at front and try again
             sem_post(&clerkSem);
             sem_wait(&clerkSem);
+            pthread_mutex_lock(&econMutex);
         }
 
         cur_simulation_secs = getCurrentSimulationTime();

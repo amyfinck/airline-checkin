@@ -180,12 +180,15 @@ void * customer_entry(void* cust_id_ptr)
         // wait for a clerk
         sem_wait(&clerkSem);
 
+        pthread_mutex_lock(&buisMutex);
+        buisQueueLength--;
         buis_head = exitQueue(buis_head, cust_id);
-        int* semVal = malloc(sizeof(int));
-        if(sem_getvalue(&clerkSem, semVal) != 0)
-        {
-            printf("getvalue failed\n");
-        }
+        pthread_mutex_unlock(&buisMutex);
+//        int* semVal = malloc(sizeof(int));
+//        if(sem_getvalue(&clerkSem, semVal) != 0)
+//        {
+//            printf("getvalue failed\n");
+//        }
 	    cur_simulation_secs = getCurrentSimulationTime();
 	    clerk = getClerk();
 
@@ -195,12 +198,13 @@ void * customer_entry(void* cust_id_ptr)
 //        printf("| ");
 //        printQueue(buis_head);
 //        printf("\n");
-        free(semVal);
+        //free(semVal);
 
         usleep(service_time * 100000);
 
         /******* Leave the airport ******/
 
+        // TODO - add clerk mutex
         clerkAvailable[clerk - 1] = 1;
 
         pthread_mutex_lock(&buisMutex);
@@ -210,12 +214,11 @@ void * customer_entry(void* cust_id_ptr)
         printf("| ");
         printQueue(buis_head);
         printf("\n");
-        buisQueueLength--;
         pthread_mutex_unlock(&buisMutex);
 
         pthread_mutex_lock(&customerCountMutex);
         customersLeft--;
-        //printf("There are %d customers left to serve.\n", customersLeft);
+        printf("There are %d customers left to serve.\n", customersLeft);
         pthread_mutex_unlock(&customerCountMutex);
 
         // done with clerk
@@ -242,11 +245,11 @@ void * customer_entry(void* cust_id_ptr)
 
 	    sem_wait(&clerkSem);
 
-        int* semVal = malloc(sizeof(int));
-        if(sem_getvalue(&clerkSem, semVal) != 0)
-        {
-            //printf("getvalue failed\n");
-        }
+//        int* semVal = malloc(sizeof(int));
+//        if(sem_getvalue(&clerkSem, semVal) != 0)
+//        {
+//            //printf("getvalue failed\n");
+//        }
 
 	    cur_simulation_secs = getCurrentSimulationTime();
 	    clerk = getClerk();
@@ -265,7 +268,7 @@ void * customer_entry(void* cust_id_ptr)
 	    clerkAvailable[clerk - 1] = 1;
 	    sem_post(&clerkSem);
 
-        free(semVal);
+        //free(semVal);
 
         /******* Leave the airport ******/
 

@@ -167,6 +167,8 @@ void * customer_entry(void* cust_id_ptr)
         /******* Get seen by clerk ******/
 
         // wait for a clerk
+        cur_simulation_secs = getCurrentSimulationTime();
+        printf("%d: I am customer %d and I am waiting at the semaphore\n", (int)(cur_simulation_secs * 10), cust_id);
         sem_wait(&clerkSem);
 
         pthread_mutex_lock(&buisMutex);
@@ -243,6 +245,8 @@ void * customer_entry(void* cust_id_ptr)
         }
         pthread_mutex_unlock(&buisMutex);
 
+        cur_simulation_secs = getCurrentSimulationTime();
+        printf("%d: I am customer %d and I am waiting at the semaphore\n", (int)(cur_simulation_secs * 10), cust_id);
         sem_wait(&clerkSem);
 
         cur_simulation_secs = getCurrentSimulationTime();

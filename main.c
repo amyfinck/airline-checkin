@@ -1,20 +1,7 @@
-#include <string.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <signal.h>
-#include <errno.h>
-#include <pthread.h>
-#include <semaphore.h>
-#include <sys/time.h>
+
 
 #include "main.h"
-#include "linked_list.h"
-#include "queue.h"
+
 
 /* global variables */
 
@@ -151,12 +138,8 @@ void * customer_entry(void* cust_id_ptr)
     usleep(arrival_time * 100000);
 
     double cur_simulation_secs = getCurrentSimulationTime();
-
     printf("%d: A customer arrives: customer ID %2d", (int)(cur_simulation_secs * 10), cust_id);
-    printQueue(econ_head);
-    printf("| ");
-    printQueue(buis_head);
-    printf("\n");
+    tryPrintQueues(buis_head, econ_head);
 
     if(class == 1)
     {
@@ -169,10 +152,14 @@ void * customer_entry(void* cust_id_ptr)
 
         //A customer enters a queue: the queue ID 1, and length of the queue  1.
         printf("%d: A customer enters a queue: the queue ID 1 and length of the queue %d", (int)(cur_simulation_secs * 10), buisQueueLength);
-//    	printQueue(econ_head);
-//    	printf("| ");
-//    	printQueue(buis_head);
-//    	printf("\n");
+        if(pthread_mutex_trylock(&econMutex) == 0)
+        {
+            printQueue(econ_head);
+            pthread_mutex_unlock(&econMutex);
+        }
+    	printf("| ");
+    	printQueue(buis_head);
+    	printf("\n");
         pthread_mutex_unlock(&buisMutex);
 
         /******* Get seen by clerk ******/
@@ -184,21 +171,12 @@ void * customer_entry(void* cust_id_ptr)
         buisQueueLength--;
         buis_head = exitQueue(buis_head, cust_id);
         pthread_mutex_unlock(&buisMutex);
-//        int* semVal = malloc(sizeof(int));
-//        if(sem_getvalue(&clerkSem, semVal) != 0)
-//        {
-//            printf("getvalue failed\n");
-//        }
+
 	    cur_simulation_secs = getCurrentSimulationTime();
 	    clerk = getClerk();
 
         //A clerk starts serving a customer: start time 0.20, the customer ID  1, the clerk ID 2.
         printf("A clerk starts serving a customer: start time %d, the customer ID %d, the clerk ID %d", (int)(cur_simulation_secs * 10), cust_id, clerk);
-//	    printQueue(econ_head);
-//        printf("| ");
-//        printQueue(buis_head);
-//        printf("\n");
-        //free(semVal);
 
         usleep(service_time * 100000);
 
@@ -235,29 +213,25 @@ void * customer_entry(void* cust_id_ptr)
         printf("%d: A customer %d enters the Economy queue | ", (int)(cur_simulation_secs * 10), cust_id);
         printQueue(econ_head);
         printf("| ");
-        printQueue(buis_head);
+        if(pthread_mutex_trylock(&buisMutex) == 0)
+        {
+            printQueue(buis_head);
+            pthread_mutex_unlock(&buisMutex);
+        }
         printf("\n");
         pthread_mutex_unlock(&econMutex);
 
         /******* Get seen by clerk ******/
 
+        // TODO - this is not in a mutex!
         while(buis_head != NULL) {} // do nothing 
 
 	    sem_wait(&clerkSem);
 
-//        int* semVal = malloc(sizeof(int));
-//        if(sem_getvalue(&clerkSem, semVal) != 0)
-//        {
-//            //printf("getvalue failed\n");
-//        }
-
 	    cur_simulation_secs = getCurrentSimulationTime();
 	    clerk = getClerk();
         printf("%d: Clerk %d awoke me! I am user %d from economy and I will now sleep for %d | ", (int)(cur_simulation_secs * 10), clerk, cust_id, service_time);
-        printQueue(econ_head);
-        printf("| ");
-        printQueue(buis_head);
-        printf("\n");
+        tryPrintQueues(buis_head, econ_head);
 
         pthread_mutex_lock(&econMutex);
         econQueueLength--;
@@ -268,8 +242,6 @@ void * customer_entry(void* cust_id_ptr)
 	    clerkAvailable[clerk - 1] = 1;
 	    sem_post(&clerkSem);
 
-        //free(semVal);
-
         /******* Leave the airport ******/
 
         pthread_mutex_lock(&econMutex);
@@ -277,6 +249,11 @@ void * customer_entry(void* cust_id_ptr)
         printf("%d: ****Customer %d leaves.**** | ", (int)(cur_simulation_secs * 10), cust_id);
         printQueue(econ_head);
         printf("| ");
+        if(pthread_mutex_trylock(&buisMutex) == 0)
+        {
+            printQueue(buis_head);
+            pthread_mutex_unlock(&buisMutex);
+        }
         printQueue(buis_head);
         printf("\n");
         pthread_mutex_unlock(&econMutex);
@@ -322,5 +299,26 @@ int getClerk()
         }
     }
     return -1;
+}
+
+void tryPrintQueues(Queue* buis_head, Queue* econ_head)
+{
+    if(pthread_mutex_trylock(&buisMutex) == 0)
+    {
+        if(pthread_mutex_trylock(&econMutex) == 0)
+        {
+            printQueue(econ_head);
+            printf("| ");
+            printQueue(buis_head);
+            printf("\n");
+            pthread_mutex_unlock(&econMutex);
+        }
+        else
+        {
+            printf("\n");
+        }
+        pthread_mutex_unlock(&buisMutex);
+    }
+    else printf("\n");
 }
 

@@ -29,60 +29,68 @@ Queue* addToQueue(Queue* head, int user_id)
     return head;
 }
 
+//Queue* exitQueue(Queue* head, int user_id)
+//{
+//    Queue* temp;
+//    temp = head;
+//
+//    printQueue(head);
+//    printf("done\n");
+//
+//    if(head->user_id == user_id)
+//    {
+//        printf("head\n");
+//        head = head->next;
+//    }
+//    else
+//    {
+//        printf("in else\n");
+//        do
+//        {
+//            printf("chec\n");
+//            if (temp->next->user_id == user_id)
+//            {
+//                printf("if \n");
+//                temp->next = temp->next->next;
+//                printf("here\n");
+//            }
+//            printf("seg\n");
+//            temp = temp->next;
+//            printf("fault\n");
+//        }
+//        while (temp != NULL);
+//    }
+//    return head;
+//}
+
 Queue* exitQueue(Queue* head, int user_id)
 {
-    printf("in exitqueue\n");
     Queue* temp;
     temp = head;
-
-    printQueue(head);
-    printf("done\n");
+    printf("BEGIN EXIT QUEUE, starting with head %d and removing %d\n", head->user_id, user_id);
 
     if(head->user_id == user_id)
     {
-        printf("head\n");
-        head = head->next;
-    }
-    else
-    {
-        printf("in else\n");
-        do
+        printf("HEAD matches user_d so removing %d from queue - ", user_id);
+        if(head->next == NULL)
         {
-            printf("chec\n");
-            if (temp->next->user_id == user_id)
-            {
-                printf("if \n");
-                temp->next = temp->next->next;
-                printf("here\n");
-            }
-            printf("seg\n");
-            temp = temp->next;
-            printf("fault\n");
+            printf("The queue is now empty\n");
         }
-        while (temp != NULL);
-    }
-    printf("returning from queue\n");
-    return head;
-}
-
-Queue* exitQueue2(Queue* head, int user_id)
-{
-    Queue* temp;
-    temp = head;
-
-    if(head->user_id == user_id)
-    {
+        else
+        {
+            printf("The new head is now %d\n", head->next->user_id);
+            printQueue(head->next);
+        }
         return head->next;
-
     }
-    while(temp != NULL && temp->next != NULL)
-    {
-        if(temp->next->user_id == user_id)
-        {
-            temp->next = temp->next->next;
-        }
-    }
-    printf("returning from queue\n");
+    printf("Okay so %d is not at the front of the queue, but we are trying to remove it!!\n", user_id);
+//    while(temp != NULL && temp->next != NULL)
+//    {
+//        if(temp->next->user_id == user_id)
+//        {
+//            temp->next = temp->next->next;
+//        }
+//    }
     return head;
 }
 

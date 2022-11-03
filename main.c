@@ -182,7 +182,7 @@ void * customer_entry(void* cust_id_ptr)
 	    clerk = getClerk();
 
         //A clerk starts serving a customer: start time 0.20, the customer ID  1, the clerk ID 2.
-        printf("A clerk starts serving a customer: start time %d, the customer ID %d, the clerk ID %d", (int)(cur_simulation_secs * 10), cust_id, clerk);
+        printf("A clerk starts serving a customer: start time %d, the customer ID %d, the clerk ID %d\n", (int)(cur_simulation_secs * 10), cust_id, clerk);
 
         usleep(service_time * 100000);
 

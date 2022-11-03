@@ -67,23 +67,12 @@ Queue* exitQueue(Queue* head, int user_id)
 {
     Queue* temp;
     temp = head;
-    printf("BEGIN EXIT QUEUE, starting with head %d and removing %d\n", head->user_id, user_id);
 
     if(head->user_id == user_id)
     {
-        printf("HEAD matches user_d so removing %d from queue - ", user_id);
-        if(head->next == NULL)
-        {
-            printf("The queue is now empty\n");
-        }
-        else
-        {
-            printf("The new head is now %d\n", head->next->user_id);
-            printQueue(head->next);
-        }
         return head->next;
     }
-    printf("Okay so %d is not at the front of the queue, but we are trying to remove it!!\n", user_id);
+    printf("ERROR - %d is not at the front of the queue, but we are trying to remove it!!\n", user_id);
 //    while(temp != NULL && temp->next != NULL)
 //    {
 //        if(temp->next->user_id == user_id)

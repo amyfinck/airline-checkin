@@ -12,6 +12,8 @@ int clerkAvailable[] = {1, 1, 1, 1, 1};
 
 sem_t clerkSem;
 
+pthread_cond_t buisQueueEmpty;
+
 Queue *econ_head = NULL;
 Queue *buis_head = NULL;
 
@@ -170,6 +172,10 @@ void * customer_entry(void* cust_id_ptr)
         pthread_mutex_lock(&buisMutex);
         buisQueueLength--;
         buis_head = exitQueue(buis_head, cust_id);
+        if(buisQueueLength == 0)
+        {
+            pthread_cond_broadcast(&buisQueueEmpty);
+        }
         pthread_mutex_unlock(&buisMutex);
 
 	    cur_simulation_secs = getCurrentSimulationTime();
@@ -224,7 +230,12 @@ void * customer_entry(void* cust_id_ptr)
         /******* Get seen by clerk ******/
 
         // TODO - this is not in a mutex!
-        while(buis_head != NULL) {} // do nothing 
+
+        pthread_mutex_lock(&buisMutex);
+        pthread_cond_wait(&buisQueueEmpty, &buisMutex);
+        pthread_mutex_unlock(&buisMutex);
+
+        //while(buis_head != NULL) {} // do nothing
 
 	    sem_wait(&clerkSem);
 

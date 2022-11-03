@@ -140,7 +140,7 @@ void * customer_entry(void* cust_id_ptr)
     usleep(arrival_time * 100000);
 
     double cur_simulation_secs = getCurrentSimulationTime();
-    printf("%d: A customer arrives: customer ID %2d", (int)(cur_simulation_secs * 10), cust_id);
+    printf("%d: A customer arrives: customer ID %d", (int)(cur_simulation_secs * 10), cust_id);
     tryPrintQueues(buis_head, econ_head);
 
     if(class == 1)
@@ -232,14 +232,20 @@ void * customer_entry(void* cust_id_ptr)
         // TODO - this is not in a mutex!
 
         pthread_mutex_lock(&buisMutex);
-        pthread_cond_wait(&buisQueueEmpty, &buisMutex);
+        if(buisQueueLength == 0)
+        {
+            // Go ahead and be seen by the clerk
+        }
+        else
+        {
+            // wait for buisness queue to be ready
+            pthread_cond_wait(&buisQueueEmpty, &buisMutex);
+        }
         pthread_mutex_unlock(&buisMutex);
 
-        //while(buis_head != NULL) {} // do nothing
+        sem_wait(&clerkSem);
 
-	    sem_wait(&clerkSem);
-
-	    cur_simulation_secs = getCurrentSimulationTime();
+        cur_simulation_secs = getCurrentSimulationTime();
 	    clerk = getClerk();
         printf("%d: Clerk %d awoke me! I am user %d from economy and I will now sleep for %d | ", (int)(cur_simulation_secs * 10), clerk, cust_id, service_time);
         tryPrintQueues(buis_head, econ_head);

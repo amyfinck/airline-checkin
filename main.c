@@ -52,9 +52,6 @@ int main(int argc, char **argv)
 {
     gettimeofday(&start_time, NULL); // record simulation start time
 
-    pthread_t custThread[10]; // TODO - what is the max? How to create dynamically?
-    pthread_t clerkThread[5];
-
     pthread_mutex_init(&econMutex, NULL);
     pthread_mutex_init(&buisMutex, NULL);
 
@@ -67,7 +64,6 @@ int main(int argc, char **argv)
     int NClerks = 5;
 
     sem_init(&clerkSem, 0, NClerks);
-
 
     if(argc == 1)
     {
@@ -96,6 +92,10 @@ int main(int argc, char **argv)
     customersLeft = NCustomers;
 
     printf("number of customers is %d\n\n", NCustomers);
+
+    pthread_t* custThread = malloc(sizeof(pthread_t)*NCustomers);
+    if(custThread == NULL) printf("ERROR - malloc failed\n");
+    pthread_t clerkThread[5];
 
     startTime = clock();
 

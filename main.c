@@ -200,7 +200,12 @@ void * clerk(void* clerk_id_ptr)
         pthread_mutex_lock(&customerCountMutex);
         cur_simulation_secs = getCurrentSimulationTime();
         printf("%d: There are now %d customers left to grab\n", (int)(cur_simulation_secs * 10), customersLeft);
-        if(customersLeft == -1) break;
+        if(customersLeft == -1)
+        {
+            cur_simulation_secs = getCurrentSimulationTime();
+            printf("%d: Customer %d should now break." (int)(cur_simulation_secs * 10), clerk_id + 1);
+            break;
+        }
         pthread_mutex_unlock(&customerCountMutex);
 
         pthread_mutex_lock(&clerkStateMutex);
@@ -291,11 +296,11 @@ void * clerk(void* clerk_id_ptr)
             printf("%d: clerk %d wants to enter the clerkStateMutex\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
             pthread_mutex_lock(&clerkStateMutex);
             cur_simulation_secs = getCurrentSimulationTime();
-            printf("%d: clerk %d entered clerkStateMutex\n", (int)(cur_simulation_secs * 10), clerk_id);
+            printf("%d: clerk %d entered clerkStateMutex\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
             for(int i = 0; i < 5; i++)
             {
                 cur_simulation_secs = getCurrentSimulationTime();
-                printf("%d: clerk %d is checking the state of %d and it is %d\n", (int)(cur_simulation_secs * 10), clerk_id +1, i+1, clerkState[i]);
+                printf("%d: clerk %d is checking the state of clerk %d and it is %d\n", (int)(cur_simulation_secs * 10), clerk_id +1, i+1, clerkState[i]);
                 // if clerk is in waiting state
                 if(clerkState[i] == 0)
                 {
@@ -314,7 +319,7 @@ void * clerk(void* clerk_id_ptr)
     }
 
     cur_simulation_secs = getCurrentSimulationTime();
-    printf("%d: clerk %d thread is breaking\n", (int)(cur_simulation_secs * 10), clerk_id);
+    printf("%d: clerk %d thread is breaking\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
 
     free(clerk_id_ptr);
     return NULL;

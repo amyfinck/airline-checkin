@@ -29,40 +29,6 @@ Queue* addToQueue(Queue* head, int user_id)
     return head;
 }
 
-//Queue* exitQueue(Queue* head, int user_id)
-//{
-//    Queue* temp;
-//    temp = head;
-//
-//    printQueue(head);
-//    printf("done\n");
-//
-//    if(head->user_id == user_id)
-//    {
-//        printf("head\n");
-//        head = head->next;
-//    }
-//    else
-//    {
-//        printf("in else\n");
-//        do
-//        {
-//            printf("chec\n");
-//            if (temp->next->user_id == user_id)
-//            {
-//                printf("if \n");
-//                temp->next = temp->next->next;
-//                printf("here\n");
-//            }
-//            printf("seg\n");
-//            temp = temp->next;
-//            printf("fault\n");
-//        }
-//        while (temp != NULL);
-//    }
-//    return head;
-//}
-
 Queue* exitQueue(Queue* head, int user_id)
 {
     Queue* temp;
@@ -72,14 +38,13 @@ Queue* exitQueue(Queue* head, int user_id)
     {
         return head->next;
     }
-    printf("ERROR - %d is not at the front of the queue, but we are trying to remove it!!\n", user_id);
-//    while(temp != NULL && temp->next != NULL)
-//    {
-//        if(temp->next->user_id == user_id)
-//        {
-//            temp->next = temp->next->next;
-//        }
-//    }
+    while(temp != NULL && temp->next != NULL)
+    {
+        if(temp->next->user_id == user_id)
+        {
+            temp->next = temp->next->next;
+        }
+    }
     return head;
 }
 
@@ -94,7 +59,6 @@ void printQueue(Queue* head)
         count++;
         temp = temp->next;
     }
-    //printf("Total customers: %d\n", count);
 }
 
 void setServed(Queue* head, int user_id)

@@ -11,7 +11,6 @@ struct queue{
 
 Queue* addToQueue(Queue* head, int user_id);
 Queue* exitQueue(Queue* head, int user_id);
-Queue* exitQueue2(Queue* head, int user_id);
 void printQueue(Queue* head);
 void setServed(Queue* head, int user_id);
 int customerInQueue(Queue* head, int user_id);

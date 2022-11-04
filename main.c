@@ -208,6 +208,7 @@ void * clerk(void* clerk_id_ptr)
         cur_simulation_secs = getCurrentSimulationTime();
         printf("%d: Clerk %d is waiting at the semaphore\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
         sem_wait(&customerSem);
+        cur_simulation_secs = getCurrentSimulationTime();
         printf("%d: Clerk %d received a post\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
 
         /*******Get next customer in line**********/
@@ -220,7 +221,7 @@ void * clerk(void* clerk_id_ptr)
         {
             cust_id = buis_head->user_id;
             service_time = getServiceTime(cust_id);
-            exitQueue(buis_head, cust_id);
+            buis_head = exitQueue(buis_head, cust_id);
 
             pthread_mutex_lock(&customerCountMutex);
             customersLeft--;
@@ -230,7 +231,7 @@ void * clerk(void* clerk_id_ptr)
         {
             cust_id = econ_head->user_id;
             service_time = getServiceTime(cust_id);
-            exitQueue(econ_head, cust_id);
+            econ_head = exitQueue(econ_head, cust_id);
 
             pthread_mutex_lock(&customerCountMutex);
             customersLeft--;

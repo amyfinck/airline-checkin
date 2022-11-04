@@ -272,12 +272,12 @@ void * clerk(void* clerk_id_ptr)
 
         /********See if that was the last one**********/
         printf("%d: we should now print customers left to grab:\n", (int)(cur_simulation_secs * 10));
-        pthread_mutex_lock(&customerCountMutex);
+        //pthread_mutex_lock(&customerCountMutex); // TODO - why cant it get this mutex?
         if(customersLeft == -1) break;
         cur_simulation_secs = getCurrentSimulationTime();
         printf("%d: There are now %d customers left to grab\n", (int)(cur_simulation_secs * 10), customersLeft);
         int custs_left = customersLeft;
-        pthread_mutex_unlock(&customerCountMutex);
+        //pthread_mutex_unlock(&customerCountMutex);
 
         if(custs_left == 0)
         {

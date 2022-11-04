@@ -278,12 +278,16 @@ void * clerk(void* clerk_id_ptr)
         if(custs_left == 0)
         {
             cur_simulation_secs = getCurrentSimulationTime();
-            printf("%d: That was the last customer!\n", (int)(cur_simulation_secs * 10));
+            printf("%d: That was the last customer! clerk %d.\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
             pthread_mutex_lock(&customerCountMutex);
+            cur_simulation_secs = getCurrentSimulationTime();
+            printf("%d: clerk %d entered customerCountMutex\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
             customersLeft = -1;
             pthread_mutex_unlock(&customerCountMutex);
 
             // This was the last customer - tear down all other clerks in waiting state
+            cur_simulation_secs = getCurrentSimulationTime();
+            printf("%d: clerk %d wants to enter the clerkStateMutex\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
             pthread_mutex_lock(&clerkStateMutex);
             cur_simulation_secs = getCurrentSimulationTime();
             printf("%d: clerk %d entered clerkStateMutex\n", (int)(cur_simulation_secs * 10), clerk_id);

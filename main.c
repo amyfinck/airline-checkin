@@ -313,6 +313,7 @@ void * clerk(void* clerk_id_ptr)
                 // if clerk is in waiting state
                 if(clerkState[i] == 0)
                 {
+                    printf("%d: sending a sem_post because %d is in waiting state\n", (int)(cur_simulation_secs * 10), i+1);
                     // send a sem post to break out of waiting state
                     sem_post(&customerSem);
                 }

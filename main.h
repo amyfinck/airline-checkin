@@ -25,8 +25,8 @@
 void * customer_entry(void * cust_id);
 void *clerk_entry(void * clerkNum);
 double getCurrentSimulationTime();
-int getClerk();
 void tryPrintQueues(Queue* buis_head, Queue* econ_head);
+void * clerk(void* clerk_id_ptr);
 
 #endif //ASSIGNMENT2_MAIN_H
 

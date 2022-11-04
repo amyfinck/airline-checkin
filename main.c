@@ -1,18 +1,13 @@
-
-
 #include "main.h"
-
 
 /* global variables */
 
 int customersLeft = 0;
 int startTime;
 
-int clerkAvailable[] = {1, 1, 1, 1, 1};
+int clerkState[] = {1, 1, 1, 1, 1};
 
-sem_t clerkSem;
-
-pthread_cond_t buisQueueEmpty;
+sem_t customerSem;
 
 Queue *econ_head = NULL;
 Queue *buis_head = NULL;
@@ -22,18 +17,11 @@ Queue *buis_head = NULL;
 //int queue_length[NQUEUE];// variable stores the real-time queue length information; mutex_lock needed
 int econQueueLength = 0;
 int buisQueueLength = 0;
+int customerCount;
 
-/* Other global variable may include: 
- 1. condition_variables (and the corresponding mutex_lock) to represent each queue; 
- 2. condition_variables to represent clerks
- 3. others.. depend on your design
- */
-pthread_mutex_t econMutex;
-pthread_mutex_t buisMutex;
+pthread_mutex_t queuesMutex;
 pthread_mutex_t customerCountMutex;
-
-pthread_cond_t econCond;
-pthread_cond_t buisCond;
+pthread_mutex_t clerkStateMutex;
 
 static struct timeval start_time; // simulation start time
 
@@ -41,18 +29,14 @@ int main(int argc, char **argv)
 {
     gettimeofday(&start_time, NULL); // record simulation start time
 
-    pthread_mutex_init(&econMutex, NULL);
-    pthread_mutex_init(&buisMutex, NULL);
-
+    pthread_mutex_init(&queuesMutex, NULL);
     pthread_mutex_init(&customerCountMutex, NULL);
-
-    pthread_cond_init(&econCond, NULL);
-    pthread_cond_init(&buisCond, NULL);
+    pthread_mutex_init(&clerkStateMutex, NULL);
 
     int NCustomers;
     int NClerks = 5;
 
-    sem_init(&clerkSem, 0, NClerks);
+    sem_init(&customerSem, 0, 0);
 
     if(argc == 1)
     {
@@ -77,9 +61,7 @@ int main(int argc, char **argv)
     }
 
     fscanf(custFile, "%d\n", &NCustomers);
-
     customersLeft = NCustomers;
-
     printf("number of customers is %d\n\n", NCustomers);
 
     pthread_t* custThread = malloc(sizeof(pthread_t)*NCustomers);
@@ -103,6 +85,19 @@ int main(int argc, char **argv)
         }
     }
 
+    for(int i = 0; i < NClerks; i++)
+    {
+        int clerk_id = i;
+
+        int* clerk_id_ptr = malloc(sizeof(int));
+        *clerk_id_ptr = clerk_id;
+
+        if(pthread_create(&clerkThread[i], NULL, &clerk, clerk_id_ptr) != 0)
+        {
+            printf("Error creating customer thread %d\n", i);
+        }
+    }
+
     printList();
 
     for(int i = 0; i < NCustomers; i++)
@@ -113,15 +108,18 @@ int main(int argc, char **argv)
         }
     }
 
-    pthread_mutex_destroy(&econMutex);
-    pthread_mutex_destroy(&buisMutex);
+    for(int i = 0; i < NClerks; i++)
+    {
+        if(pthread_join(clerkThread[i], NULL) != 0)
+        {
+            printf("Error joining clerk thread %d\n", i);
+        }
+    }
 
+    pthread_mutex_destroy(&queuesMutex);
     pthread_mutex_destroy(&customerCountMutex);
 
-    pthread_cond_destroy(&econCond);
-    pthread_cond_destroy(&buisCond);
-
-    sem_close(&clerkSem);
+    sem_close(&customerSem);
 
     // calculate the average waiting time of all customers
     return 0;
@@ -133,175 +131,44 @@ void * customer_entry(void* cust_id_ptr)
     int cust_id = *(int*)cust_id_ptr;
     int class = getClassType(cust_id);
     int arrival_time = getArrivalTime(cust_id);
-    int service_time = getServiceTime(cust_id);
-    int clerk;
 
     // wait for customer to arrive
     usleep(arrival_time * 100000);
 
     double cur_simulation_secs = getCurrentSimulationTime();
     printf("%d: A customer arrives: customer ID %d", (int)(cur_simulation_secs * 10), cust_id);
-    tryPrintQueues(buis_head, econ_head);
 
     if(class == 1)
     {
-        /******* Add to Buisness Queue ******/
-
-        pthread_mutex_lock(&buisMutex);
+        /******* Add to Business Queue ******/
+        pthread_mutex_lock(&queuesMutex);
         buis_head = addToQueue(buis_head, cust_id);
+        cur_simulation_secs = getCurrentSimulationTime();
         buisQueueLength++;
-        cur_simulation_secs = getCurrentSimulationTime();
-
-        //A customer enters a queue: the queue ID 1, and length of the queue  1.
         printf("%d: A customer enters a queue: the queue ID 1 and length of the queue %d", (int)(cur_simulation_secs * 10), buisQueueLength);
-        if(pthread_mutex_trylock(&econMutex) == 0)
-        {
-            printQueue(econ_head);
-            pthread_mutex_unlock(&econMutex);
-        }
-        printf("| ");
-        printQueue(buis_head);
-        printf("\n");
-        pthread_mutex_unlock(&buisMutex);
-
-        /******* Get seen by clerk ******/
-
-        // wait for a clerk
-        sem_wait(&clerkSem);
-
-        pthread_mutex_lock(&buisMutex);
-        buisQueueLength--;
-        buis_head = exitQueue(buis_head, cust_id);
-        if(buisQueueLength == 0)
-        {
-            pthread_cond_broadcast(&buisQueueEmpty);
-        }
-        pthread_mutex_unlock(&buisMutex);
-
-        cur_simulation_secs = getCurrentSimulationTime();
-        clerk = getClerk();
-
-        //A clerk starts serving a customer: start time 0.20, the customer ID  1, the clerk ID 2.
-        printf("A clerk starts serving a customer: start time %d, the customer ID %d, the clerk ID %d\n", (int)(cur_simulation_secs * 10), cust_id, clerk);
-
-        usleep(service_time * 100000);
-
-        /******* Leave the airport ******/
-
-        // TODO - add clerk mutex
-        clerkAvailable[clerk - 1] = 1;
-
-        pthread_mutex_lock(&buisMutex);
-        cur_simulation_secs = getCurrentSimulationTime();
-        printf("%d: ****Customer %d leaves.**** | ", (int)(cur_simulation_secs * 10), cust_id);
         printQueue(econ_head);
         printf("| ");
         printQueue(buis_head);
         printf("\n");
-        pthread_mutex_unlock(&buisMutex);
-
-        pthread_mutex_lock(&customerCountMutex);
-        customersLeft--;
-        printf("There are %d customers left to serve.\n", customersLeft);
-        pthread_mutex_unlock(&customerCountMutex);
-
-        // done with clerk
-        sem_post(&clerkSem);
+        pthread_mutex_unlock(&queuesMutex);
+        sem_post(&customerSem);
     }
     else if(class == 0)
     {
         /******* Add to Economy Queue ******/
-
-        pthread_mutex_lock(&econMutex);
+        pthread_mutex_lock(&queuesMutex);
         econ_head = addToQueue(econ_head, cust_id);
-        econQueueLength++;
         cur_simulation_secs = getCurrentSimulationTime();
+        econQueueLength++;
         printf("%d: A customer %d enters the Economy queue | ", (int)(cur_simulation_secs * 10), cust_id);
         printQueue(econ_head);
         printf("| ");
-        if(pthread_mutex_trylock(&buisMutex) == 0)
-        {
-            printQueue(buis_head);
-            pthread_mutex_unlock(&buisMutex);
-        }
-        printf("\n");
-        pthread_mutex_unlock(&econMutex);
-
-        /******* Get seen by clerk ******/
-
-        pthread_mutex_lock(&buisMutex);
-        pthread_cond_wait(&buisQueueEmpty, &buisMutex);
-        pthread_mutex_unlock(&buisMutex);
-
-        while(1)
-        {
-            // if I am next in line, wait
-            // if I am not next in line, then pass on
-            if(econ_head != NULL & econ_head->user_id == cust_id)
-            {
-                break;
-            }
-            else
-            {
-                usleep(1);
-            }
-        }
-
-//        if(buisQueueLength == 0)
-//        {
-//            // Go ahead and be seen by the clerk
-//        }
-//        else
-//        {
-//            // wait for business queue to be ready
-//            pthread_cond_wait(&buisQueueEmpty, &buisMutex);
-//        }
-        //pthread_mutex_unlock(&buisMutex);
-
-        sem_wait(&clerkSem);
-
-        cur_simulation_secs = getCurrentSimulationTime();
-        clerk = getClerk();
-        printf("%d: Clerk %d awoke me! I am user %d from economy and I will now sleep for %d | ", (int)(cur_simulation_secs * 10), clerk, cust_id, service_time);
-        tryPrintQueues(buis_head, econ_head);
-
-        pthread_mutex_lock(&econMutex);
-        econQueueLength--;
-        econ_head = exitQueue(econ_head, cust_id);
-        pthread_mutex_unlock(&econMutex);
-
-        usleep(service_time * 100000);
-        clerkAvailable[clerk - 1] = 1;
-        sem_post(&clerkSem);
-
-        /******* Leave the airport ******/
-
-        pthread_mutex_lock(&econMutex);
-        cur_simulation_secs = getCurrentSimulationTime();
-        printf("%d: ****Customer %d leaves.**** | ", (int)(cur_simulation_secs * 10), cust_id);
-        printQueue(econ_head);
-        printf("| ");
-        if(pthread_mutex_trylock(&buisMutex) == 0)
-        {
-            printQueue(buis_head);
-            pthread_mutex_unlock(&buisMutex);
-        }
         printQueue(buis_head);
         printf("\n");
-        pthread_mutex_unlock(&econMutex);
-
-        pthread_mutex_lock(&customerCountMutex);
-        customersLeft--;
-        //printf("There are %d customers left to serve.\n\n", customersLeft);
-        pthread_mutex_unlock(&customerCountMutex);
+        pthread_mutex_unlock(&queuesMutex);
+        sem_post(&customerSem);
     }
-
-    //pthread_cond_signal(/* The clerk awoken me */); // Notify the clerk that service is finished, it can serve another customer
-
-    //pthread_exit(NULL);
-
     free(cust_id_ptr);
-
     return NULL;
 }
 
@@ -320,36 +187,100 @@ double getCurrentSimulationTime()
     return cur_secs - init_secs;
 }
 
-int getClerk()
+void * clerk(void* clerk_id_ptr)
 {
-    for(int i = 0; i < 5; i++)
-    {
-        if(clerkAvailable[i] == 1)
-        {
-            clerkAvailable[i] = 0;
-            return i + 1;
-        }
-    }
-    return -1;
-}
+    int clerk_id = *(int*)clerk_id_ptr;
+    int cust_id;
+    int service_time;
 
-void tryPrintQueues(Queue* buis_head, Queue* econ_head)
-{
-    if(pthread_mutex_trylock(&buisMutex) == 0)
+    while(1)
     {
-        if(pthread_mutex_trylock(&econMutex) == 0)
+        pthread_mutex_lock(&customerCountMutex);
+        if(customersLeft == -1) break;
+        pthread_mutex_unlock(&customerCountMutex);
+
+        pthread_mutex_lock(&clerkStateMutex);
+        clerkState[clerk_id] = 0;
+        pthread_mutex_unlock(&clerkStateMutex);
+
+        sem_wait(&customerSem);
+
+        /*******Get next customer in line**********/
+        pthread_mutex_lock(&clerkStateMutex);
+        clerkState[clerk_id] = 1;
+        pthread_mutex_unlock(&clerkStateMutex);
+
+        pthread_mutex_lock(&queuesMutex);
+        if(buis_head != NULL)
         {
-            printQueue(econ_head);
-            printf("| ");
-            printQueue(buis_head);
-            printf("\n");
-            pthread_mutex_unlock(&econMutex);
+            cust_id = buis_head->user_id;
+            service_time = getServiceTime(cust_id);
+            exitQueue(buis_head, cust_id);
+
+            pthread_mutex_lock(&customerCountMutex);
+            customersLeft--;
+            pthread_mutex_unlock(&customerCountMutex);
+        }
+        else if(econ_head != NULL)
+        {
+            cust_id = econ_head->user_id;
+            service_time = getServiceTime(cust_id);
+            exitQueue(econ_head, cust_id);
+
+            pthread_mutex_lock(&customerCountMutex);
+            customersLeft--;
+            pthread_mutex_unlock(&customerCountMutex);
+
         }
         else
         {
-            printf("\n");
+            // there is nobody in either queue
+            if(customersLeft == -1) break;
+            else
+            {
+                printf("Nobody in queue but last one has not been served\n");
+                break;
+            }
         }
-        pthread_mutex_unlock(&buisMutex);
+        pthread_mutex_unlock(&queuesMutex);
+
+        /********Serve customer***********/
+
+        int cur_simulation_secs = getCurrentSimulationTime();
+        printf("%d: I am clerk %d and I have grabbed customer %d. I will now sleep for %d.\n", (int)(cur_simulation_secs * 10), clerk_id + 1, cust_id, service_time);
+        usleep(service_time * 100000);
+        cur_simulation_secs = getCurrentSimulationTime();
+        printf("%d: Clerk %d finished with %d. They will now EXIT.\n", (int)(cur_simulation_secs * 10), clerk_id + 1, cust_id);
+
+        /********See if that was the last one**********/
+        pthread_mutex_lock(&customerCountMutex);
+        if(customersLeft == -1) break;
+        customersLeft--;
+        int custs_left = customersLeft;
+        pthread_mutex_lock(&customerCountMutex);
+
+        if(custs_left == 0)
+        {
+            pthread_mutex_lock(&customerCountMutex);
+            customersLeft = -1;
+            pthread_mutex_unlock(&customerCountMutex);
+
+            // This was the last customer - tear down all other clerks in waiting state
+            pthread_mutex_lock(&clerkStateMutex);
+            for(int i = 0; i < 5; i++)
+            {
+                // if clerk is in waiting state
+                if(clerkState[i] == 0)
+                {
+                    // send a sem post to break out of waiting state
+                    sem_post(&customerSem);
+                }
+            }
+            pthread_mutex_unlock(&clerkStateMutex);
+        }
+        else if(customersLeft == -1) break;
     }
-    else printf("\n");
+
+    free(clerk_id_ptr);
+    return NULL;
 }

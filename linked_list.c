@@ -152,6 +152,7 @@ void printAverageWaitingTime()
     while(temp != NULL)
     {
         count++;
+        printf("For %d the start time is %f and the arrival time is %d\n", temp->user_id, temp->clerk_start_time, temp->arrival_time);
         sum += ((temp->clerk_start_time) - (float)(temp->arrival_time));
         temp = temp->next;
     }
@@ -169,6 +170,7 @@ void printBusinessWaitingTime()
         if(temp->class_type == 1)
         {
             count++;
+            //printf("For %d the start time is %f and the arrival time is %d\n", temp->user_id, temp->clerk_start_time, temp->arrival_time);
             sum += ((temp->clerk_start_time) - (float)(temp->arrival_time));
         }
         temp = temp->next;
@@ -187,6 +189,7 @@ void printEconomyWaitingTime()
         if(temp->class_type == 0)
         {
             count++;
+            //printf("For %d the start time is %f and the arrival time is %d\n", temp->user_id, temp->clerk_start_time, temp->arrival_time);
             sum += ((temp->clerk_start_time) - (float)(temp->arrival_time));
         }
         temp = temp->next;

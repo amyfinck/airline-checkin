@@ -230,18 +230,20 @@ void * customer_entry(void* cust_id_ptr)
         /******* Get seen by clerk ******/
 
         pthread_mutex_lock(&buisMutex);
+        pthread_cond_wait(&buisQueueEmpty, &buisMutex);
+        pthread_mutex_unlock(&buisMutex);
+
         while(1)
         {
-            pthread_cond_wait(&buisQueueEmpty, &buisMutex);
             // if I am next in line, wait
             // if I am not next in line, then pass on
-            if(econ_head != NULL && econ_head->user_id == cust_id)
+            if(econ_head != NULL & econ_head->user_id == cust_id)
             {
                 break;
             }
             else
             {
-                pthread_cond_broadcast(&buisQueueEmpty);
+                usleep(1);
             }
         }
 
@@ -254,7 +256,7 @@ void * customer_entry(void* cust_id_ptr)
 //            // wait for business queue to be ready
 //            pthread_cond_wait(&buisQueueEmpty, &buisMutex);
 //        }
-        pthread_mutex_unlock(&buisMutex);
+        //pthread_mutex_unlock(&buisMutex);
 
         sem_wait(&clerkSem);
 

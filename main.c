@@ -285,6 +285,8 @@ void * clerk(void* clerk_id_ptr)
 
             // This was the last customer - tear down all other clerks in waiting state
             pthread_mutex_lock(&clerkStateMutex);
+            cur_simulation_secs = getCurrentSimulationTime();
+            printf("%d: clerk %d entered clerkStateMutex\n", (int)(cur_simulation_secs * 10), clerk_id);
             for(int i = 0; i < 5; i++)
             {
                 // if clerk is in waiting state

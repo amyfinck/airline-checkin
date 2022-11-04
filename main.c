@@ -298,9 +298,16 @@ void * clerk(void* clerk_id_ptr)
             }
             pthread_mutex_unlock(&clerkStateMutex);
         }
-        else if(customersLeft == -1) break;
+        else if(customersLeft == -1)
+        {
+
+        }
+
         // end while
     }
+
+    cur_simulation_secs = getCurrentSimulationTime();
+    printf("%d: clerk %d thread is breaking\n", (int)(cur_simulation_secs * 10), clerk_id);
 
     free(clerk_id_ptr);
     return NULL;

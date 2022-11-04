@@ -123,11 +123,10 @@ int main(int argc, char **argv)
     printAverageWaitingTime();
     printBusinessWaitingTime();
     printEconomyWaitingTime();
-    // calculate the average waiting time of all customers
+
     return 0;
 }
 
-// function entry for customer threads
 void * customer_entry(void* cust_id_ptr)
 {
     int cust_id = *(int*)cust_id_ptr;
@@ -138,7 +137,7 @@ void * customer_entry(void* cust_id_ptr)
     usleep(arrival_time * 100000);
 
     double cur_simulation_secs = getCurrentSimulationTime();
-    printf("%d: A customer arrives: customer ID %d\n", (int)(cur_simulation_secs * 10), cust_id);
+    printf("%d: A customer arrives: customer ID %d", (int)(cur_simulation_secs * 10), cust_id);
 
     if(class == 1)
     {
@@ -162,7 +161,7 @@ void * customer_entry(void* cust_id_ptr)
         econ_head = addToQueue(econ_head, cust_id);
         cur_simulation_secs = getCurrentSimulationTime();
         econQueueLength++;
-        printf("%d: A customer enters a queue: the queue ID 1 and length of the queue %d.", (int)(cur_simulation_secs * 10), econQueueLength);
+        printf("%d: A customer enters a queue: the queue ID 0 and length of the queue %d.", (int)(cur_simulation_secs * 10), econQueueLength);
         printQueue(econ_head);
         printf("| ");
         printQueue(buis_head);
@@ -195,17 +194,12 @@ void * clerk(void* clerk_id_ptr)
     int cust_id;
     int service_time;
     double cur_simulation_secs;
-    printf("%d: Clerk %d created\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
 
     while(1)
     {
         pthread_mutex_lock(&customerCountMutex);
-        cur_simulation_secs = getCurrentSimulationTime();
-        printf("%d: There are now %d customers left to grab\n", (int)(cur_simulation_secs * 10), customersLeft);
         if(customersLeft == -1)
         {
-            cur_simulation_secs = getCurrentSimulationTime();
-            printf("%d: Customer %d should now break.\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
             pthread_mutex_unlock(&customerCountMutex);
             break;
         }
@@ -215,11 +209,7 @@ void * clerk(void* clerk_id_ptr)
         clerkState[clerk_id] = 0;
         pthread_mutex_unlock(&clerkStateMutex);
 
-        cur_simulation_secs = getCurrentSimulationTime();
-        //printf("%d: Clerk %d is waiting at the semaphore\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
         sem_wait(&customerSem);
-        cur_simulation_secs = getCurrentSimulationTime();
-        //printf("%d: Clerk %d received a post\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
 
         /*******Get next customer in line**********/
         pthread_mutex_lock(&clerkStateMutex);
@@ -235,6 +225,7 @@ void * clerk(void* clerk_id_ptr)
 
             pthread_mutex_lock(&customerCountMutex);
             customersLeft--;
+            buisQueueLength--;
             pthread_mutex_unlock(&customerCountMutex);
         }
         else if(econ_head != NULL)
@@ -245,6 +236,7 @@ void * clerk(void* clerk_id_ptr)
 
             pthread_mutex_lock(&customerCountMutex);
             customersLeft--;
+            econQueueLength--;
             pthread_mutex_unlock(&customerCountMutex);
         }
         else
@@ -267,7 +259,7 @@ void * clerk(void* clerk_id_ptr)
         }
 
         cur_simulation_secs = getCurrentSimulationTime();
-        printf("%d: A clerk starts serving a customer: start time %0.2f, the customer ID %2d, the clerk ID %d.\n", (int)(cur_simulation_secs * 10), cur_simulation_secs, cust_id, clerk_id + 1);
+        printf("%d: A clerk starts serving a customer: start time %0.2f, the customer ID %2d, the clerk ID %d.", (int)(cur_simulation_secs * 10), cur_simulation_secs, cust_id, clerk_id + 1);
         printQueue(econ_head);
         printf("| ");
         printQueue(buis_head);
@@ -283,50 +275,33 @@ void * clerk(void* clerk_id_ptr)
         printf("%d -->>> A clerk finishes serving a customer: end time %0.2f, the customer ID %2d, the clerk ID %d. \n", (int)(cur_simulation_secs * 10), cur_simulation_secs, cust_id, clerk_id + 1);
 
         /********See if that was the last one**********/
-        pthread_mutex_lock(&customerCountMutex); // TODO - why cant it get this mutex?
+        pthread_mutex_lock(&customerCountMutex);
         if(customersLeft == -1)
         {
             pthread_mutex_unlock(&customerCountMutex);
             break;
         }
-        cur_simulation_secs = getCurrentSimulationTime();
         int custs_left = customersLeft;
         pthread_mutex_unlock(&customerCountMutex);
 
         if(custs_left == 0)
         {
-            cur_simulation_secs = getCurrentSimulationTime();
-            printf("%d: That was the last customer! clerk %d.\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
-
             pthread_mutex_lock(&customerCountMutex);
-            cur_simulation_secs = getCurrentSimulationTime();
             customersLeft = -1;
             pthread_mutex_unlock(&customerCountMutex);
 
             // This was the last customer - tear down all other clerks in waiting state
-            cur_simulation_secs = getCurrentSimulationTime();
-
             pthread_mutex_lock(&clerkStateMutex);
-            cur_simulation_secs = getCurrentSimulationTime();
             for(int i = 0; i < 5; i++)
             {
-                cur_simulation_secs = getCurrentSimulationTime();
-                printf("%d: clerk %d is checking the state of clerk %d and it is %d\n", (int)(cur_simulation_secs * 10), clerk_id +1, i+1, clerkState[i]);
-                // if clerk is in waiting state
                 if(clerkState[i] == 0)
                 {
-                    printf("%d: sending a sem_post because %d is in waiting state\n", (int)(cur_simulation_secs * 10), i+1);
-                    // send a sem post to break out of waiting state
                     sem_post(&customerSem);
                 }
             }
             pthread_mutex_unlock(&clerkStateMutex);
         }
-        // end while
-    }
-
-    cur_simulation_secs = getCurrentSimulationTime();
-    printf("%d: clerk %d thread is breaking\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
+    } // end while
 
     free(clerk_id_ptr);
     return NULL;

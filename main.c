@@ -136,7 +136,7 @@ void * customer_entry(void* cust_id_ptr)
     usleep(arrival_time * 100000);
 
     double cur_simulation_secs = getCurrentSimulationTime();
-    printf("%d: A customer arrives: customer ID %d", (int)(cur_simulation_secs * 10), cust_id);
+    printf("%d: A customer arrives: customer ID %d\n", (int)(cur_simulation_secs * 10), cust_id);
 
     if(class == 1)
     {
@@ -192,6 +192,7 @@ void * clerk(void* clerk_id_ptr)
     int clerk_id = *(int*)clerk_id_ptr;
     int cust_id;
     int service_time;
+    double cur_simulation_secs;
 
     while(1)
     {
@@ -203,6 +204,8 @@ void * clerk(void* clerk_id_ptr)
         clerkState[clerk_id] = 0;
         pthread_mutex_unlock(&clerkStateMutex);
 
+        cur_simulation_secs = getCurrentSimulationTime();
+        printf("%d: Clerk %d is waiting at the semaphore\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
         sem_wait(&customerSem);
 
         /*******Get next customer in line**********/
@@ -246,7 +249,7 @@ void * clerk(void* clerk_id_ptr)
 
         /********Serve customer***********/
 
-        int cur_simulation_secs = getCurrentSimulationTime();
+        cur_simulation_secs = getCurrentSimulationTime();
         printf("%d: I am clerk %d and I have grabbed customer %d. I will now sleep for %d.\n", (int)(cur_simulation_secs * 10), clerk_id + 1, cust_id, service_time);
         usleep(service_time * 100000);
         cur_simulation_secs = getCurrentSimulationTime();

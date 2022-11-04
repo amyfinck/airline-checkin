@@ -264,13 +264,14 @@ void * clerk(void* clerk_id_ptr)
         printf("%d: CUSTOMER %d EXITS: Clerk %d finished with them.\n", (int)(cur_simulation_secs * 10), cust_id, clerk_id + 1);
 
         /********See if that was the last one**********/
+        printf("%d: CUSTOMER %d EXITS: Clerk %d finished with them.\n", (int)(cur_simulation_secs * 10), cust_id, clerk_id + 1);
         pthread_mutex_lock(&customerCountMutex);
         if(customersLeft == -1) break;
         customersLeft--;
         cur_simulation_secs = getCurrentSimulationTime();
         printf("%d: There are now %d customers left to grab\n", (int)(cur_simulation_secs * 10), customersLeft);
         int custs_left = customersLeft;
-        pthread_mutex_lock(&customerCountMutex);
+        pthread_mutex_unlock(&customerCountMutex);
 
         if(custs_left == 0)
         {

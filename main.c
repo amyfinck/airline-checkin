@@ -239,6 +239,10 @@ void * customer_entry(void* cust_id_ptr)
             {
                 break;
             }
+            else
+            {
+                pthread_cond_broadcast(buisQueueEmpty);
+            }
         }
 
 //        if(buisQueueLength == 0)

@@ -203,7 +203,7 @@ void * clerk(void* clerk_id_ptr)
         if(customersLeft == -1)
         {
             cur_simulation_secs = getCurrentSimulationTime();
-            printf("%d: Customer %d should now break.", (int)(cur_simulation_secs * 10), clerk_id + 1);
+            printf("%d: Customer %d should now break.\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
             break;
         }
         pthread_mutex_unlock(&customerCountMutex);
@@ -269,10 +269,9 @@ void * clerk(void* clerk_id_ptr)
         usleep(service_time * 100000);
         cur_simulation_secs = getCurrentSimulationTime();
         printf("%d: CUSTOMER %d EXITS: Clerk %d finished with them.\n", (int)(cur_simulation_secs * 10), cust_id, clerk_id + 1);
-        cur_simulation_secs = getCurrentSimulationTime();
-        printf("%d: There are now %d customers left to grab\n", (int)(cur_simulation_secs * 10), customersLeft);
 
         /********See if that was the last one**********/
+        printf("%d: we should now print customers left to grab:\n", (int)(cur_simulation_secs * 10));
         pthread_mutex_lock(&customerCountMutex);
         if(customersLeft == -1) break;
         cur_simulation_secs = getCurrentSimulationTime();

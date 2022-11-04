@@ -15,6 +15,7 @@ Queue *buis_head = NULL;
 //struct timeval init_time; // use this variable to record the simulation start time; No need to use mutex_lock when reading this variable since the value would not be changed by thread once the initial time was set.
 //double overall_waiting_time; //A global variable to add up the overall waiting time for all customers, every customer add their own waiting time to this variable, mutex_lock is necessary.
 //int queue_length[NQUEUE];// variable stores the real-time queue length information; mutex_lock needed
+
 int econQueueLength = 0;
 int buisQueueLength = 0;
 int customerCount;
@@ -121,6 +122,9 @@ int main(int argc, char **argv)
 
     sem_close(&customerSem);
 
+    printAverageWaitingTime();
+    printBusinessWaitingTime();
+    printEconomyWaitingTime();
     // calculate the average waiting time of all customers
     return 0;
 }
@@ -274,6 +278,8 @@ void * clerk(void* clerk_id_ptr)
 
         /********Serve customer***********/
 
+        cur_simulation_secs = getCurrentSimulationTime();
+        setClerkStartTime(cust_id, cur_simulation_secs);
         usleep(service_time * 100000);
         cur_simulation_secs = getCurrentSimulationTime();
         printf("%d: CUSTOMER %d EXITS: Clerk %d finished with them.\n", (int)(cur_simulation_secs * 10), cust_id, clerk_id + 1);

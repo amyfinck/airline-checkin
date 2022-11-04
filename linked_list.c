@@ -127,3 +127,69 @@ int getArrivalTime(int user_id)
     }
     return -1;
 }
+
+void setClerkStartTime(int user_id, float cur_simulation_secs)
+{
+    CustomerInfo* temp = head;
+
+    while(temp != NULL)
+    {
+        if(temp->user_id == user_id)
+        {
+            temp->clerk_start_time = cur_simulation_secs;
+            return;
+        }
+        temp = temp->next;
+    }
+}
+
+void printAverageWaitingTime()
+{
+    CustomerInfo* temp = head;
+    int count = 0;
+    float sum = 0;
+
+    while(temp != NULL)
+    {
+        count++;
+        sum += ((temp->clerk_start_time) - (float)(temp->arrival_time));
+        temp = temp->next;
+    }
+    printf("The average waiting time for all customers in the system is: %.2f seconds. \n", sum / count);
+}
+
+void printBusinessWaitingTime()
+{
+    CustomerInfo* temp = head;
+    int count = 0;
+    float sum = 0;
+
+    while(temp != NULL)
+    {
+        if(temp->class_type == 1)
+        {
+            count++;
+            sum += ((temp->clerk_start_time) - (float)(temp->arrival_time));
+        }
+        temp = temp->next;
+    }
+    printf("The average waiting time for all business-class customers is: %.2f seconds. \n", sum / count);
+}
+
+void printEconomyWaitingTime()
+{
+    CustomerInfo* temp = head;
+    int count = 0;
+    float sum = 0;
+
+    while(temp != NULL)
+    {
+        if(temp->class_type == 0)
+        {
+            count++;
+            sum += ((temp->clerk_start_time) - (float)(temp->arrival_time));
+        }
+        temp = temp->next;
+    }
+    printf("The average waiting time for all economy-class customers is: %.2f seconds. \n", sum / count);
+}

@@ -8,6 +8,7 @@ struct customer_info{ /// use this struct to record the customer information rea
     int class_type;
     int service_time;
     int arrival_time;
+    float clerk_start_time;
     CustomerInfo* next;
 };
 
@@ -18,5 +19,9 @@ int customerExists(int user_id);
 int getClassType(int user_id);
 int getServiceTime(int user_id);
 int getArrivalTime(int user_id);
+void setClerkStartTime(int user_id, float cur_simulation_secs);
+void printAverageWaitingTime();
+void printEconomyWaitingTime();
+void printBusinessWaitingTime();
 
 #endif

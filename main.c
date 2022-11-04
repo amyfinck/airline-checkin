@@ -52,10 +52,6 @@ int main(int argc, char **argv)
         printf("Error - failed to open file\n");
         return -1;
     }
-    else
-    {
-        printf("file opened\n");
-    }
 
     fscanf(custFile, "%d\n", &NCustomers);
     customersLeft = NCustomers;
@@ -136,7 +132,7 @@ void * customer_entry(void* cust_id_ptr)
     usleep(arrival_time * 100000);
 
     double cur_simulation_secs = getCurrentSimulationTime();
-    printf("A customer arrives: customer ID %d", cust_id);
+    printf("A customer arrives: customer ID %d\n", cust_id);
 
     if(class == 1)
     {
@@ -154,7 +150,7 @@ void * customer_entry(void* cust_id_ptr)
         pthread_mutex_lock(&queuesMutex);
         econ_head = addToQueue(econ_head, cust_id);
         econQueueLength++;
-        printf("A customer enters a queue: the queue ID 0 and length of the queue %d.", econQueueLength);
+        printf("A customer enters a queue: the queue ID 0 and length of the queue %d.\n", econQueueLength);
         pthread_mutex_unlock(&queuesMutex);
         sem_post(&customerSem);
     }

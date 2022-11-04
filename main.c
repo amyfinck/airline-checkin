@@ -193,6 +193,7 @@ void * clerk(void* clerk_id_ptr)
     int cust_id;
     int service_time;
     double cur_simulation_secs;
+    printf("%d: Clerk %d created\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
 
     while(1)
     {
@@ -207,6 +208,7 @@ void * clerk(void* clerk_id_ptr)
         cur_simulation_secs = getCurrentSimulationTime();
         printf("%d: Clerk %d is waiting at the semaphore\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
         sem_wait(&customerSem);
+        printf("%d: Clerk %d received a post\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
 
         /*******Get next customer in line**********/
         pthread_mutex_lock(&clerkStateMutex);
@@ -245,12 +247,17 @@ void * clerk(void* clerk_id_ptr)
                 break;
             }
         }
+
+        cur_simulation_secs = getCurrentSimulationTime();
+        printf("%d: I am clerk %d and I have grabbed customer %d. I will now sleep for %d.", (int)(cur_simulation_secs * 10), clerk_id + 1, cust_id, service_time);
+        printQueue(econ_head);
+        printf("| ");
+        printQueue(buis_head);
+        printf("\n");
         pthread_mutex_unlock(&queuesMutex);
 
         /********Serve customer***********/
 
-        cur_simulation_secs = getCurrentSimulationTime();
-        printf("%d: I am clerk %d and I have grabbed customer %d. I will now sleep for %d.\n", (int)(cur_simulation_secs * 10), clerk_id + 1, cust_id, service_time);
         usleep(service_time * 100000);
         cur_simulation_secs = getCurrentSimulationTime();
         printf("%d: Clerk %d finished with %d. They will now EXIT.\n", (int)(cur_simulation_secs * 10), clerk_id + 1, cust_id);

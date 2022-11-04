@@ -145,7 +145,7 @@ void * customer_entry(void* cust_id_ptr)
         buis_head = addToQueue(buis_head, cust_id);
         cur_simulation_secs = getCurrentSimulationTime();
         buisQueueLength++;
-        printf("%d: A customer enters a queue: the queue ID 1 and length of the queue %d", (int)(cur_simulation_secs * 10), buisQueueLength);
+        printf("%d: A customer enters a queue: the queue ID 1 and length of the queue %d. ", (int)(cur_simulation_secs * 10), buisQueueLength);
         printQueue(econ_head);
         printf("| ");
         printQueue(buis_head);
@@ -250,7 +250,7 @@ void * clerk(void* clerk_id_ptr)
         }
 
         cur_simulation_secs = getCurrentSimulationTime();
-        printf("%d: I am clerk %d and I have grabbed customer %d. I will now sleep for %d.", (int)(cur_simulation_secs * 10), clerk_id + 1, cust_id, service_time);
+        printf("%d: I am clerk %d and I have grabbed customer %d. I will now sleep for %d. ", (int)(cur_simulation_secs * 10), clerk_id + 1, cust_id, service_time);
         printQueue(econ_head);
         printf("| ");
         printQueue(buis_head);
@@ -261,17 +261,21 @@ void * clerk(void* clerk_id_ptr)
 
         usleep(service_time * 100000);
         cur_simulation_secs = getCurrentSimulationTime();
-        printf("%d: Clerk %d finished with %d. They will now EXIT.\n", (int)(cur_simulation_secs * 10), clerk_id + 1, cust_id);
+        printf("%d: CUSTOMER %d EXITS: Clerk %d finished with them.\n", (int)(cur_simulation_secs * 10), cust_id, clerk_id + 1);
 
         /********See if that was the last one**********/
         pthread_mutex_lock(&customerCountMutex);
         if(customersLeft == -1) break;
         customersLeft--;
+        cur_simulation_secs = getCurrentSimulationTime();
+        printf("%d: There are now %d customers left to grab\n", (int)(cur_simulation_secs * 10), customersLeft);
         int custs_left = customersLeft;
         pthread_mutex_lock(&customerCountMutex);
 
         if(custs_left == 0)
         {
+            cur_simulation_secs = getCurrentSimulationTime();
+            printf("%d: That was the last customer!\n", (int)(cur_simulation_secs * 10));
             pthread_mutex_lock(&customerCountMutex);
             customersLeft = -1;
             pthread_mutex_unlock(&customerCountMutex);
@@ -283,6 +287,8 @@ void * clerk(void* clerk_id_ptr)
                 // if clerk is in waiting state
                 if(clerkState[i] == 0)
                 {
+                    cur_simulation_secs = getCurrentSimulationTime();
+                    printf("%d: Tearing down clerk %d\n", (int)(cur_simulation_secs * 10), i+1);
                     // send a sem post to break out of waiting state
                     sem_post(&customerSem);
                 }
@@ -290,6 +296,7 @@ void * clerk(void* clerk_id_ptr)
             pthread_mutex_unlock(&clerkStateMutex);
         }
         else if(customersLeft == -1) break;
+        // end while
     }
 
     free(clerk_id_ptr);

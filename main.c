@@ -272,7 +272,7 @@ void * clerk(void* clerk_id_ptr)
         setClerkStartTime(cust_id, cur_simulation_secs);
         usleep(service_time * 100000);
         cur_simulation_secs = getCurrentSimulationTime();
-        printf("%d -->>> A clerk finishes serving a customer: end time %0.2f, the customer ID %2d, the clerk ID %d. \n", (int)(cur_simulation_secs * 10), cur_simulation_secs, cust_id, clerk_id + 1);
+        printf("%d -->>> A clerk finishes serving a customer: end time %0.2f, the customer ID %2d, the clerk ID %d.", (int)(cur_simulation_secs * 10), cur_simulation_secs, cust_id, clerk_id + 1);
 
         /********See if that was the last one**********/
         pthread_mutex_lock(&customerCountMutex);

@@ -229,18 +229,27 @@ void * customer_entry(void* cust_id_ptr)
 
         /******* Get seen by clerk ******/
 
-        // TODO - this is not in a mutex!
-
         pthread_mutex_lock(&buisMutex);
-        if(buisQueueLength == 0)
+        while(1)
         {
-            // Go ahead and be seen by the clerk
-        }
-        else
-        {
-            // wait for buisness queue to be ready
             pthread_cond_wait(&buisQueueEmpty, &buisMutex);
+            // if I am next in line, wait
+            // if I am not next in line, then pass on
+            if(econ_head != NULL && econ_head->user_id == cust_id)
+            {
+                break;
+            }
         }
+
+//        if(buisQueueLength == 0)
+//        {
+//            // Go ahead and be seen by the clerk
+//        }
+//        else
+//        {
+//            // wait for business queue to be ready
+//            pthread_cond_wait(&buisQueueEmpty, &buisMutex);
+//        }
         pthread_mutex_unlock(&buisMutex);
 
         sem_wait(&clerkSem);

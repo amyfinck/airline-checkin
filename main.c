@@ -203,7 +203,7 @@ void * clerk(void* clerk_id_ptr)
         if(customersLeft == -1)
         {
             cur_simulation_secs = getCurrentSimulationTime();
-            printf("%d: Customer %d should now break." (int)(cur_simulation_secs * 10), clerk_id + 1);
+            printf("%d: Customer %d should now break.", (int)(cur_simulation_secs * 10), clerk_id + 1);
             break;
         }
         pthread_mutex_unlock(&customerCountMutex);

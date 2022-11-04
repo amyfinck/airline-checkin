@@ -234,14 +234,32 @@ void * customer_entry(void* cust_id_ptr)
         pthread_mutex_lock(&buisMutex);
         if(buisQueueLength == 0)
         {
+            // Give up our spot to a buisnessperson
             // Go ahead and be seen by the clerk
         }
         else
         {
+            // give up our spot to a buisnessman
             // wait for buisness queue to be ready
             pthread_cond_wait(&buisQueueEmpty, &buisMutex);
+
+            pthread_mutex_lock(&econMutex);
+            while(econ_head != NULL && econ_head->user_id != cust_id)
+            {
+                pthread_mutex_unlock(&econMutex);
+                usleep(1);
+                pthread_mutex_lock(&econMutex);
+            }
+            pthread_mutex_unlock(&econMutex);
+
+            // wait here?
         }
         pthread_mutex_unlock(&buisMutex);
+
+        cur_simulation_secs = getCurrentSimulationTime();
+        printf("%d: I am customer %d and I am waiting at the semaphore\n", (int)(cur_simulation_secs * 10), cust_id);
+        sem_wait(&clerkSem);
+
 
         /*
          * Error - they are both waiting here, and therefore lose their place as it is now random which one exits.
@@ -249,17 +267,12 @@ void * customer_entry(void* cust_id_ptr)
          */
 
 
-
-        cur_simulation_secs = getCurrentSimulationTime();
-        printf("%d: I am customer %d and I am waiting at the semaphore\n", (int)(cur_simulation_secs * 10), cust_id);
-        sem_wait(&clerkSem);
         pthread_mutex_lock(&econMutex);
         while(econ_head != NULL && econ_head->user_id != cust_id)
         {
             pthread_mutex_unlock(&econMutex);
             // give up semaphore if not at front and try again
             sem_post(&clerkSem);
-            sem_wait(&clerkSem);
             pthread_mutex_lock(&econMutex);
         }
 

@@ -279,6 +279,7 @@ void * clerk(void* clerk_id_ptr)
         {
             cur_simulation_secs = getCurrentSimulationTime();
             printf("%d: That was the last customer! clerk %d.\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
+
             pthread_mutex_lock(&customerCountMutex);
             cur_simulation_secs = getCurrentSimulationTime();
             printf("%d: clerk %d entered customerCountMutex\n", (int)(cur_simulation_secs * 10), clerk_id + 1);
@@ -297,7 +298,7 @@ void * clerk(void* clerk_id_ptr)
                 if(clerkState[i] == 0)
                 {
                     cur_simulation_secs = getCurrentSimulationTime();
-                    printf("%d: Tearing down clerk %d\n", (int)(cur_simulation_secs * 10), i+1);
+                    printf("%d: clerk %d is checking the state of %d and it is %d\n", (int)(cur_simulation_secs * 10), clerk_id, i+1);
                     // send a sem post to break out of waiting state
                     sem_post(&customerSem);
                 }

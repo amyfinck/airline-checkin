@@ -294,11 +294,11 @@ void * clerk(void* clerk_id_ptr)
             printf("%d: clerk %d entered clerkStateMutex\n", (int)(cur_simulation_secs * 10), clerk_id);
             for(int i = 0; i < 5; i++)
             {
+                cur_simulation_secs = getCurrentSimulationTime();
+                printf("%d: clerk %d is checking the state of %d and it is %d\n", (int)(cur_simulation_secs * 10), clerk_id +1, i+1, clerkState[i]);
                 // if clerk is in waiting state
                 if(clerkState[i] == 0)
                 {
-                    cur_simulation_secs = getCurrentSimulationTime();
-                    printf("%d: clerk %d is checking the state of %d and it is %d\n", (int)(cur_simulation_secs * 10), clerk_id, i+1);
                     // send a sem post to break out of waiting state
                     sem_post(&customerSem);
                 }

@@ -150,7 +150,7 @@ void * customer_entry(void* cust_id_ptr)
         pthread_mutex_lock(&buisMutex);
         buis_head = addToQueue(buis_head, cust_id);
         buisQueueLength++;
-	    cur_simulation_secs = getCurrentSimulationTime();
+        cur_simulation_secs = getCurrentSimulationTime();
 
         //A customer enters a queue: the queue ID 1, and length of the queue  1.
         printf("%d: A customer enters a queue: the queue ID 1 and length of the queue %d", (int)(cur_simulation_secs * 10), buisQueueLength);
@@ -159,16 +159,14 @@ void * customer_entry(void* cust_id_ptr)
             printQueue(econ_head);
             pthread_mutex_unlock(&econMutex);
         }
-    	printf("| ");
-    	printQueue(buis_head);
-    	printf("\n");
+        printf("| ");
+        printQueue(buis_head);
+        printf("\n");
         pthread_mutex_unlock(&buisMutex);
 
         /******* Get seen by clerk ******/
 
         // wait for a clerk
-        cur_simulation_secs = getCurrentSimulationTime();
-        printf("%d: I am customer %d and I am waiting at the semaphore\n", (int)(cur_simulation_secs * 10), cust_id);
         sem_wait(&clerkSem);
 
         pthread_mutex_lock(&buisMutex);
@@ -180,8 +178,8 @@ void * customer_entry(void* cust_id_ptr)
         }
         pthread_mutex_unlock(&buisMutex);
 
-	    cur_simulation_secs = getCurrentSimulationTime();
-	    clerk = getClerk();
+        cur_simulation_secs = getCurrentSimulationTime();
+        clerk = getClerk();
 
         //A clerk starts serving a customer: start time 0.20, the customer ID  1, the clerk ID 2.
         printf("A clerk starts serving a customer: start time %d, the customer ID %d, the clerk ID %d\n", (int)(cur_simulation_secs * 10), cust_id, clerk);
@@ -194,7 +192,7 @@ void * customer_entry(void* cust_id_ptr)
         clerkAvailable[clerk - 1] = 1;
 
         pthread_mutex_lock(&buisMutex);
-	    cur_simulation_secs = getCurrentSimulationTime();
+        cur_simulation_secs = getCurrentSimulationTime();
         printf("%d: ****Customer %d leaves.**** | ", (int)(cur_simulation_secs * 10), cust_id);
         printQueue(econ_head);
         printf("| ");
@@ -217,7 +215,7 @@ void * customer_entry(void* cust_id_ptr)
         pthread_mutex_lock(&econMutex);
         econ_head = addToQueue(econ_head, cust_id);
         econQueueLength++;
-	    cur_simulation_secs = getCurrentSimulationTime();
+        cur_simulation_secs = getCurrentSimulationTime();
         printf("%d: A customer %d enters the Economy queue | ", (int)(cur_simulation_secs * 10), cust_id);
         printQueue(econ_head);
         printf("| ");
@@ -231,53 +229,24 @@ void * customer_entry(void* cust_id_ptr)
 
         /******* Get seen by clerk ******/
 
+        // TODO - this is not in a mutex!
+
         pthread_mutex_lock(&buisMutex);
         if(buisQueueLength == 0)
         {
-            // Give up our spot to a buisnessperson
             // Go ahead and be seen by the clerk
         }
         else
         {
-            // give up our spot to a buisnessman
             // wait for buisness queue to be ready
             pthread_cond_wait(&buisQueueEmpty, &buisMutex);
-
-            pthread_mutex_lock(&econMutex);
-            while(econ_head != NULL && econ_head->user_id != cust_id)
-            {
-                pthread_mutex_unlock(&econMutex);
-                usleep(1);
-                pthread_mutex_lock(&econMutex);
-            }
-            pthread_mutex_unlock(&econMutex);
-
-            // wait here?
         }
         pthread_mutex_unlock(&buisMutex);
 
-        cur_simulation_secs = getCurrentSimulationTime();
-        printf("%d: I am customer %d and I am waiting at the semaphore\n", (int)(cur_simulation_secs * 10), cust_id);
         sem_wait(&clerkSem);
 
-
-        /*
-         * Error - they are both waiting here, and therefore lose their place as it is now random which one exits.
-         * To solve this, we need to let them go one
-         */
-
-
-        pthread_mutex_lock(&econMutex);
-        while(econ_head != NULL && econ_head->user_id != cust_id)
-        {
-            pthread_mutex_unlock(&econMutex);
-            // give up semaphore if not at front and try again
-            sem_post(&clerkSem);
-            pthread_mutex_lock(&econMutex);
-        }
-
         cur_simulation_secs = getCurrentSimulationTime();
-	    clerk = getClerk();
+        clerk = getClerk();
         printf("%d: Clerk %d awoke me! I am user %d from economy and I will now sleep for %d | ", (int)(cur_simulation_secs * 10), clerk, cust_id, service_time);
         tryPrintQueues(buis_head, econ_head);
 
@@ -287,13 +256,13 @@ void * customer_entry(void* cust_id_ptr)
         pthread_mutex_unlock(&econMutex);
 
         usleep(service_time * 100000);
-	    clerkAvailable[clerk - 1] = 1;
-	    sem_post(&clerkSem);
+        clerkAvailable[clerk - 1] = 1;
+        sem_post(&clerkSem);
 
         /******* Leave the airport ******/
 
         pthread_mutex_lock(&econMutex);
-	    cur_simulation_secs = getCurrentSimulationTime();
+        cur_simulation_secs = getCurrentSimulationTime();
         printf("%d: ****Customer %d leaves.**** | ", (int)(cur_simulation_secs * 10), cust_id);
         printQueue(econ_head);
         printf("| ");
@@ -340,10 +309,10 @@ int getClerk()
 {
     for(int i = 0; i < 5; i++)
     {
-	if(clerkAvailable[i] == 1)
+        if(clerkAvailable[i] == 1)
         {
             clerkAvailable[i] = 0;
-	    return i + 1;
+            return i + 1;
         }
     }
     return -1;
@@ -369,4 +338,3 @@ void tryPrintQueues(Queue* buis_head, Queue* econ_head)
     }
     else printf("\n");
 }
-

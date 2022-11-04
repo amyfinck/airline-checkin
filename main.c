@@ -241,7 +241,7 @@ void * customer_entry(void* cust_id_ptr)
             }
             else
             {
-                pthread_cond_broadcast(buisQueueEmpty);
+                pthread_cond_broadcast(&buisQueueEmpty);
             }
         }
 
